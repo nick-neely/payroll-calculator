@@ -17,7 +17,15 @@ def calculate_payroll():
 
         while True:
             # Ask the user for the number of hours worked
-            hours_worked = input("Please enter the number of hours worked (or 'done' to finish): ")
+            while True:
+                hours_worked = input("Please enter the number of hours worked (or 'done' to finish): ")
+                if hours_worked.lower() == 'done':
+                    break
+
+                try:
+                    total_hours_worked += float(hours_worked)
+                except ValueError:
+                    print("Invalid input. Please enter a valid number of hours.")
             
             if hours_worked.lower() == 'done':
                 break
@@ -170,23 +178,27 @@ def main():
     """
     The main function.
     """
-    calculate_again = 'y'
-    while calculate_again.lower() == 'y':
-        total_hours_worked, gross_pay, fica_tax, net_pay = calculate_payroll()
+    action = input("Would you like to calculate payroll or search for an employee? (calculate/search): ")
 
-        save_to_file = input("Would you like to save the payroll summary to a file? (y/n): ")
-        if save_to_file.lower() == "y":
-            name = input("Please enter the name: ")
-            save_payroll(name, total_hours_worked, gross_pay, fica_tax, net_pay)
-        
-        calculate_again = input("Would you like to calculate another payroll? (y/n): ")
+    if action.lower() == 'calculate':
+        calculate_again = 'y'
+        while calculate_again.lower() == 'y':
+            total_hours_worked, gross_pay, fica_tax, net_pay = calculate_payroll()
 
-    search_name = input("Would you like to search for all instances of a name? (y/n): ")
-    if search_name.lower() == "y":
-        search_payroll()
+            save_to_file = input("Would you like to save the payroll summary to a file? (y/n): ")
+            if save_to_file.lower() == "y":
+                name = input("Please enter the name: ")
+                save_payroll(name, total_hours_worked, gross_pay, fica_tax, net_pay)
+            
+            calculate_again = input("Would you like to calculate another payroll? (y/n): ")
 
-    search_net_pay = input("Would you like to calculate the total net pay for a name? (y/n): ")
-    if search_net_pay.lower() == "y":
-        total_net_pay_search()
+    elif action.lower() == 'search':
+        search_name = input("Would you like to search for all instances of a name? (y/n): ")
+        if search_name.lower() == "y":
+            search_payroll()
+
+        search_net_pay = input("Would you like to calculate the total net pay for a name? (y/n): ")
+        if search_net_pay.lower() == "y":
+            total_net_pay_search()
 
 main()
