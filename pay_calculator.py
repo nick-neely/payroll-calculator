@@ -1,6 +1,8 @@
 import json
 import datetime
 
+file_path = r"payroll_summary.json"
+
 
 def calculate_payroll():
     """
@@ -76,9 +78,6 @@ def save_payroll(name, total_hours_worked, gross_pay, fica_tax, net_pay):
             "FICA Tax": round(fica_tax, 2),
             "Net Pay": round(net_pay, 2)
         }
-        
-        # Specify the full path to the file
-        file_path = r"payroll_summary.json"
 
         # Read the existing data from the file
         try:
@@ -99,6 +98,74 @@ def save_payroll(name, total_hours_worked, gross_pay, fica_tax, net_pay):
     except IOError:
         print("Error saving payroll summary to file.")
 
+def search_payroll():
+    """
+    Search the payroll summary for a specific name.
+
+    Raises:
+        IOError: If there is an error reading the payroll summary from the file.
+    """
+    try:
+        # Read the existing data from the file
+        try:
+            with open(file_path, "r") as file:
+                data = json.load(file)
+        except (FileNotFoundError, json.JSONDecodeError):
+            data = []
+
+        # Ask the user for the name to search
+        name = input("Please enter the name to search: ").lower()
+
+        # Search the payroll summary for the name
+        found = False
+        for payroll_summary in data:
+            if payroll_summary["Name"].lower() == name:
+                print("-------------------------")
+                print(f"Name: {payroll_summary['Name']}")
+                print(f"Total Hours: {payroll_summary['Total Hours']}")
+                print(f"Date: {payroll_summary['Date']}")
+                print(f"Gross Pay: {payroll_summary['Gross Pay']}")
+                print(f"FICA Tax: {payroll_summary['FICA Tax']}")
+                print(f"Net Pay: {payroll_summary['Net Pay']}")
+                print("-------------------------")
+                found = True
+
+        if not found:
+            print("No payroll summary found for the specified name.")
+
+    except IOError:
+        print("Error reading payroll summary from file.")
+    
+
+def total_net_pay_search():
+    """
+    Searches the payroll summary for a given name and calculates the total net pay.
+
+    Returns:
+    None
+    """
+    try:
+        # Read the existing data from the file
+        try:
+            with open(file_path, "r") as file:
+                data = json.load(file)
+        except (FileNotFoundError, json.JSONDecodeError):
+            data = []
+
+        # Ask the user for the name to search
+        name = input("Please enter the name to search: ").lower()
+
+        # Search the payroll summary for the name
+        total_net_pay = 0.0
+        for payroll_summary in data:
+            if payroll_summary["Name"].lower() == name:
+                total_net_pay += payroll_summary["Net Pay"]
+
+        print(f"Total Net Pay: {total_net_pay}")
+
+    except IOError:
+        print("Error reading payroll summary from file.")
+
 def main():
     """
     The main function.
@@ -113,5 +180,13 @@ def main():
             save_payroll(name, total_hours_worked, gross_pay, fica_tax, net_pay)
         
         calculate_again = input("Would you like to calculate another payroll? (y/n): ")
+
+    search_name = input("Would you like to search for all instances of a name? (y/n): ")
+    if search_name.lower() == "y":
+        search_payroll()
+
+    search_net_pay = input("Would you like to calculate the total net pay for a name? (y/n): ")
+    if search_net_pay.lower() == "y":
+        total_net_pay_search()
 
 main()
