@@ -1,12 +1,13 @@
 # Payroll Calculator
 
 ## Description
-This Python program calculates payroll details, including total hours worked, gross pay, FICA tax, and net pay. It prompts the user to input hours worked and uses a predefined hourly wage to compute the financial details. The calculated payroll is then saved to a file in JSON format.
+This Python program calculates payroll details, including total hours worked, gross pay, FICA tax, net pay, and now includes overtime pay calculations. It prompts the user to input hours worked and uses a predefined hourly wage to compute the financial details. The calculated payroll, including overtime pay, is then saved to a file in JSON format.
 
 ## Features
 - **User Input for Hours**: Users can input the number of hours worked interactively.
-- **Automatic Calculations**: Calculates gross pay, FICA tax, and net pay based on the hours worked.
-- **Data Export**: Saves the payroll information to a file in JSON format for easy record-keeping and retrieval.
+- **Overtime Pay Calculation**: Automatically calculates overtime pay for hours worked beyond a standard 40-hour week.
+- **Automatic Calculations**: Calculates gross pay, FICA tax, net pay, and overtime pay based on the hours worked.
+- **Data Export**: Saves the payroll information, including overtime details, to a file in JSON format for easy record-keeping and retrieval.
 - **Simple Interface**: User-friendly with clear instructions.
 
 ## How to Run
