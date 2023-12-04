@@ -1,7 +1,11 @@
 import json
 import datetime
+from collections import OrderedDict
 
 file_path = r"payroll_summary.json"
+
+# Define the hourly wage
+hourly_wage = 20.0
 
 
 def calculate_payroll():
@@ -14,6 +18,7 @@ def calculate_payroll():
     try:
         # Initialize the hours worked
         total_hours_worked = 0.0
+        overtime_hours = 0.0
 
         while True:
             # Ask the user for the number of hours worked
@@ -21,49 +26,67 @@ def calculate_payroll():
                 hours_worked = input("Please enter the number of hours worked (or 'done' to finish): ")
                 if hours_worked.lower() == 'done':
                     break
-
                 try:
-                    total_hours_worked += float(hours_worked)
+                    hours_worked = float(hours_worked)
+
+                    if total_hours_worked + hours_worked > 40:
+                        overtime_hours = (total_hours_worked + hours_worked) - 40
+                    else:
+                        overtime_hours = 0
+
+                    total_hours_worked += hours_worked
+
+                    # Calculate the overtime wage
+                    overtime_wage = hourly_wage * 1.5
+
+                    # Calculate the overtime pay
+                    overtime_pay = overtime_hours * overtime_wage
+
+                    # Calculate the FICA tax
+                    fica_tax_rate = 7.65 / 100
+
+                    # Calculate the gross pay, FICA tax, and net pay
+                    gross_pay = (total_hours_worked * hourly_wage) + (overtime_hours * hourly_wage * 1.5)
+                    fica_tax = gross_pay * fica_tax_rate
+                    net_pay = gross_pay - fica_tax
+
+                    # Calculate the net pay
+                    net_pay = gross_pay - fica_tax
+
                 except ValueError:
                     print("Invalid input. Please enter a valid number of hours.")
             
             if hours_worked.lower() == 'done':
                 break
-
-            total_hours_worked += float(hours_worked)
-
-        # Define the hourly wage
-        hourly_wage = 20.0
-
-        # Calculate the gross pay
-        gross_pay = total_hours_worked * hourly_wage
-
-        # Calculate the FICA tax
-        fica_tax_rate = 7.65 / 100
-        fica_tax = gross_pay * fica_tax_rate
-
-        # Calculate the net pay
-        net_pay = gross_pay - fica_tax
+                    
 
         # Print the total hours worked
         print("\nPayroll Summary")
         print("-------------------------")
         print(f"Total Hours Worked: {total_hours_worked:.2f}")
 
+        # Print the overtime hours if any
+        if overtime_hours > 0:
+            print(f"Overtime Hours: {overtime_hours:.2f}")
+            print(f"Overtime Pay ({overtime_hours} * ${overtime_wage:.2f}): ${overtime_pay:.2f}")
+
         # Print the gross pay, FICA tax, and net pay
-        print(f"Gross Pay ({total_hours_worked} * ${hourly_wage}): ${gross_pay:.2f}")
-        print(f"FICA Tax (${gross_pay} * {fica_tax_rate}): ${fica_tax:.2f}")
-        print(f"Net Pay (${gross_pay} - ${fica_tax:.2f}): ${net_pay:.2f}")
+        if overtime_hours > 0:
+            print(f"Gross Pay ({total_hours_worked - overtime_hours} * ${hourly_wage:.2f} + ${overtime_pay:.2f}): ${gross_pay:.2f}")
+        else:
+            print(f"Gross Pay ({total_hours_worked - overtime_hours} * ${hourly_wage:.2f}): ${gross_pay:.2f}")
+        print(f"FICA Tax (${gross_pay:.2f} * {fica_tax_rate}): ${fica_tax:.1f}")
+        print(f"Net Pay (${gross_pay:.2f} - ${fica_tax:.2f}): ${net_pay:.2f}")
 
         print("-------------------------")
 
     except ValueError:
         print("Invalid input. Please enter a valid number of hours.")
 
-    return total_hours_worked, gross_pay, fica_tax, net_pay
+    return total_hours_worked, overtime_hours, overtime_pay, gross_pay, fica_tax, net_pay
 
 
-def save_payroll(name, total_hours_worked, gross_pay, fica_tax, net_pay):
+def save_payroll(name, total_hours_worked, overtime_hours, overtime_pay, gross_pay, fica_tax, net_pay):
     """
     Save the payroll summary to a JSON file.
 
@@ -78,14 +101,23 @@ def save_payroll(name, total_hours_worked, gross_pay, fica_tax, net_pay):
     """
     try:
         # Create a dictionary for the payroll summary
-        payroll_summary = {
-            "Name": name,
-            "Total Hours": total_hours_worked,
-            "Date": datetime.datetime.now().strftime("%Y-%m-%d"),
-            "Gross Pay": round(gross_pay, 2),
-            "FICA Tax": round(fica_tax, 2),
-            "Net Pay": round(net_pay, 2)
-        }
+        payroll_summary = OrderedDict([
+            ("Name", name),
+            ("Date", datetime.datetime.now().strftime("%Y-%m-%d")),
+            ("Total Hours", total_hours_worked),
+            ("Gross Pay", round(gross_pay, 2)),
+            ("FICA Tax", round(fica_tax, 2)),
+            ("Net Pay", round(net_pay, 2))
+        ])
+
+        if overtime_hours > 0:
+            # Add "Overtime Hours" and "Overtime Pay" to the end of the dictionary
+            payroll_summary["Overtime Hours"] = overtime_hours
+            payroll_summary["Overtime Pay"] = round(overtime_pay, 2)
+
+            # Move "Gross Pay", "FICA Tax", and "Net Pay" to the end of the dictionary
+            for key in ["Gross Pay", "FICA Tax", "Net Pay"]:
+                payroll_summary.move_to_end(key)
 
         # Read the existing data from the file
         try:
@@ -130,11 +162,15 @@ def search_payroll():
             if payroll_summary["Name"].lower() == name:
                 print("-------------------------")
                 print(f"Name: {payroll_summary['Name']}")
-                print(f"Total Hours: {payroll_summary['Total Hours']}")
                 print(f"Date: {payroll_summary['Date']}")
-                print(f"Gross Pay: {payroll_summary['Gross Pay']}")
-                print(f"FICA Tax: {payroll_summary['FICA Tax']}")
-                print(f"Net Pay: {payroll_summary['Net Pay']}")
+                print(f"Total Hours: {payroll_summary['Total Hours']} hrs")
+                if "Overtime Hours" in payroll_summary:
+                    print(f"Overtime Hours: {payroll_summary['Overtime Hours']} hrs")
+                if "Overtime Pay" in payroll_summary:
+                    print(f"Overtime Pay: ${payroll_summary['Overtime Pay']}")
+                print(f"Gross Pay: ${payroll_summary['Gross Pay']}")
+                print(f"FICA Tax: ${payroll_summary['FICA Tax']}")
+                print(f"Net Pay: ${payroll_summary['Net Pay']}")
                 print("-------------------------")
                 found = True
 
@@ -169,7 +205,7 @@ def total_net_pay_search():
             if payroll_summary["Name"].lower() == name:
                 total_net_pay += payroll_summary["Net Pay"]
 
-        print(f"Total Net Pay: {total_net_pay}")
+        print(f"Total Net Pay: ${total_net_pay}")
 
     except IOError:
         print("Error reading payroll summary from file.")
@@ -183,12 +219,12 @@ def main():
     if action.lower() == 'calculate':
         calculate_again = 'y'
         while calculate_again.lower() == 'y':
-            total_hours_worked, gross_pay, fica_tax, net_pay = calculate_payroll()
+            total_hours_worked, overtime_hours, overtime_pay, gross_pay, fica_tax, net_pay = calculate_payroll()
 
             save_to_file = input("Would you like to save the payroll summary to a file? (y/n): ")
             if save_to_file.lower() == "y":
                 name = input("Please enter the name: ")
-                save_payroll(name, total_hours_worked, gross_pay, fica_tax, net_pay)
+                save_payroll(name, total_hours_worked, overtime_hours, overtime_pay, gross_pay, fica_tax, net_pay)
             
             calculate_again = input("Would you like to calculate another payroll? (y/n): ")
 
