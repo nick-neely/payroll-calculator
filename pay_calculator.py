@@ -214,27 +214,36 @@ def main():
     """
     The main function.
     """
-    action = input("Would you like to calculate payroll or search for an employee? (calculate/search): ")
+    exit_program = False
 
-    if action.lower() == 'calculate':
-        calculate_again = 'y'
-        while calculate_again.lower() == 'y':
-            total_hours_worked, overtime_hours, overtime_pay, gross_pay, fica_tax, net_pay = calculate_payroll()
+    while not exit_program:
+        action = input("Would you like to calculate payroll, search for an employee, or exit? (calculate/search/exit): ")
 
-            save_to_file = input("Would you like to save the payroll summary to a file? (y/n): ")
-            if save_to_file.lower() == "y":
-                name = input("Please enter the name: ")
-                save_payroll(name, total_hours_worked, overtime_hours, overtime_pay, gross_pay, fica_tax, net_pay)
-            
-            calculate_again = input("Would you like to calculate another payroll? (y/n): ")
+        if action.lower() == 'calculate':
+            calculate_again = 'y'
+            while calculate_again.lower() == 'y':
+                total_hours_worked, overtime_hours, overtime_pay, gross_pay, fica_tax, net_pay = calculate_payroll()
 
-    elif action.lower() == 'search':
-        search_name = input("Would you like to search for all instances of a name? (y/n): ")
-        if search_name.lower() == "y":
-            search_payroll()
+                save_to_file = input("Would you like to save the payroll summary to a file? (y/n): ")
+                if save_to_file.lower() == "y":
+                    name = input("Please enter the name: ")
+                    save_payroll(name, total_hours_worked, overtime_hours, overtime_pay, gross_pay, fica_tax, net_pay)
+                
+                calculate_again = input("Would you like to calculate another payroll? (y/n): ")
 
-        search_net_pay = input("Would you like to calculate the total net pay for a name? (y/n): ")
-        if search_net_pay.lower() == "y":
-            total_net_pay_search()
+        elif action.lower() == 'search':
+            search_name = input("Would you like to search for all instances of a name? (y/n): ")
+            if search_name.lower() == "y":
+                search_payroll()
+
+            search_net_pay = input("Would you like to calculate the total net pay for a name? (y/n): ")
+            if search_net_pay.lower() == "y":
+                total_net_pay_search()
+        
+        elif action.lower() == 'exit':
+            exit_program = True
+
+        else:
+            print("Invalid command. Please enter 'calculate', 'search', or 'exit'.")
 
 main()
