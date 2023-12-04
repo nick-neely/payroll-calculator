@@ -205,7 +205,7 @@ def total_net_pay_search():
             if payroll_summary["Name"].lower() == name:
                 total_net_pay += payroll_summary["Net Pay"]
 
-        print(f"Total Net Pay: ${total_net_pay}")
+        print(f"Total Net Pay: ${total_net_pay:.2f}")
 
     except IOError:
         print("Error reading payroll summary from file.")
