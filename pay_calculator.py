@@ -75,7 +75,7 @@ def calculate_payroll():
             print(f"Gross Pay ({total_hours_worked - overtime_hours} * ${hourly_wage:.2f} + ${overtime_pay:.2f}): ${gross_pay:.2f}")
         else:
             print(f"Gross Pay ({total_hours_worked - overtime_hours} * ${hourly_wage:.2f}): ${gross_pay:.2f}")
-        print(f"FICA Tax (${gross_pay:.2f} * {fica_tax_rate}): ${fica_tax:.1f}")
+        print(f"FICA Tax (${gross_pay:.2f} * {fica_tax_rate}): ${fica_tax:.2f}")
         print(f"Net Pay (${gross_pay:.2f} - ${fica_tax:.2f}): ${net_pay:.2f}")
 
         print("-------------------------")
