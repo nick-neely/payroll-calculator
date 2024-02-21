@@ -6,6 +6,15 @@ file_path = r"payroll_summary.json"
 
 
 def save_employees(employees):
+    """
+    Save the list of employees to a JSON file.
+
+    Args:
+        employees (list): A list of employee objects.
+
+    Returns:
+        None
+    """
     with open("employees.json", "w") as f:
         json.dump(employees, f)
 
@@ -102,7 +111,7 @@ def calculate_payroll(hourly_wage):
         print("-------------------------")
 
     except ValueError:
-        print("Invalid input. Please enter a valid number of hours.")
+        print("\nInvalid input. Please enter a valid number of hours.\n")
 
     return (
         total_hours_worked,
@@ -165,10 +174,10 @@ def save_payroll(
         with open(file_path, "w") as file:
             json.dump(data, file, indent=4)
 
-        print("Payroll summary saved to payroll_summary.json")
+        print("\nPayroll summary saved to payroll_summary.json\n")
 
     except IOError:
-        print("Error saving payroll summary to file.")
+        print("\nError saving payroll summary to file.\n")
 
 
 def search_payroll():
@@ -209,10 +218,10 @@ def search_payroll():
                 found = True
 
         if not found:
-            print("No payroll summary found for the specified name.")
+            print("\nNo payroll summary found for the specified name.\n")
 
     except IOError:
-        print("Error reading payroll summary from file.")
+        print("\nError reading payroll summary from file.\n")
 
 
 def total_net_pay_search():
@@ -239,21 +248,57 @@ def total_net_pay_search():
             if payroll_summary["Name"].lower() == name:
                 total_net_pay += payroll_summary["Net Pay"]
 
-        print(f"Total Net Pay: ${total_net_pay:.2f}")
+        print(f"\nTotal Net Pay: ${total_net_pay:.2f}\n")
 
     except IOError:
-        print("Error reading payroll summary from file.")
+        print("\nError reading payroll summary from file.\n")
 
 
 def search_employee(employees):
     employee_id = input("Enter the employee ID: ")
     if employee_id in employees:
-        print("Employee found:")
+        print("\nEmployee found:")
         print("Name: ", employees[employee_id]["name"])
         print("Email: ", employees[employee_id]["email"])
         print("Hourly wage: ", employees[employee_id]["hourly_wage"])
+        print()  # Add a new line
     else:
-        print("Employee not found.")
+        print("\nEmployee not found.\n")
+
+
+def edit_employee(employees):
+    """
+    Edit the details of an employee.
+
+    Args:
+        employees (dict): A dictionary containing employee information.
+
+    Returns:
+        None
+    """
+    employee_id = input("Enter the employee ID to edit: ")
+    if employee_id in employees:
+        print("Current Employee Details:")
+        print("Name: ", employees[employee_id]["name"])
+        print("Email: ", employees[employee_id]["email"])
+        print("Hourly wage: ", employees[employee_id]["hourly_wage"])
+
+        print("\nEnter new details (leave blank to keep current value):")
+        name = input("Enter the employee's new name: ")
+        email = input("Enter the employee's new email: ")
+        hourly_wage = input("Enter the employee's new hourly wage: ")
+
+        if name:
+            employees[employee_id]["name"] = name
+        if email:
+            employees[employee_id]["email"] = email
+        if hourly_wage:
+            employees[employee_id]["hourly_wage"] = float(hourly_wage)
+
+        save_employees(employees)  # Save employees to the JSON file
+        print("\nEmployee details updated.\n")
+    else:
+        print("\nEmployee not found.\n")
 
 
 def main():
@@ -266,7 +311,7 @@ def main():
 
     while not exit_program:
         action = input(
-            "Would you like to (A)dd an employee, (C)alculate payroll, (S)earch for an employee, or (E)xit? (A/C/S/E): "
+            "Would you like to (A)dd an employee, (C)alculate payroll, (S)earch for an employee, (E)dit an employee, or e(X)it? (A/C/S/E/X): "
         )
 
         if action.lower() in ["add", "a"]:
@@ -309,7 +354,7 @@ def main():
                         net_pay,
                     )
             else:
-                print("Employee ID not found.")
+                print("\nEmployee ID not found.\n")
 
         elif action.lower() in ["search", "s"]:
             search_type = input(
@@ -322,14 +367,17 @@ def main():
             elif search_type.lower() in ["total", "t"]:
                 total_net_pay_search()
             else:
-                print("Invalid command. Please enter 'specific', 'all', or 'total'.")
+                print("\nInvalid command. Please enter 'specific', 'all', or 'total'.\n")
 
-        elif action.lower() in ["exit", "e"]:
+        elif action.lower() in ["edit", "e"]:
+            edit_employee(employees)
+
+        elif action.lower() in ["exit", "x"]:
             exit_program = True
 
         else:
             print(
-                "Invalid command. Please enter 'add', 'calculate', 'search', or 'exit'."
+                "\nInvalid command. Please enter 'add', 'calculate', 'search', 'edit', or 'exit'.\n"
             )
 
 
