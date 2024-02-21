@@ -302,6 +302,15 @@ def edit_employee(employees):
 
 
 def delete_employee(employees):
+    """
+    Deletes an employee from the employees dictionary based on the provided employee ID.
+
+    Args:
+        employees (dict): A dictionary containing employee information.
+
+    Returns:
+        None
+    """
     employee_id = input("\nEnter the employee ID to delete: ")
     if employee_id in employees:
         print("Employee Details:")
@@ -319,6 +328,24 @@ def delete_employee(employees):
             print("\nEmployee not deleted.\n")
     else:
         print("\nEmployee not found.\n")
+
+
+def list_employees(employees):
+    """
+    Prints the details of each employee in the provided dictionary.
+
+    Parameters:
+    employees (dict): A dictionary containing employee information.
+
+    Returns:
+    None
+    """
+    for employee_id, employee_info in employees.items():
+        print(f"ID: {employee_id}")
+        print(f"Name: {employee_info['name']}")
+        print(f"Email: {employee_info['email']}")
+        print(f"Hourly wage: {employee_info['hourly_wage']}")
+        print("------------------------")
 
 
 def main():
@@ -378,7 +405,7 @@ def main():
 
         elif action.lower() in ["search", "s"]:
             search_type = input(
-                "Would you like to search for a (S)pecific employee, (A)ll instances of a name, or (T)otal net pay? (S/A/T): "
+                "Would you like to search for a (S)pecific employee, (A)ll instances of a name, (T)otal net pay, or (L)ist all employees? (S/A/T/L): "
             )
             if search_type.lower() in ["specific", "s"]:
                 search_employee(employees)
@@ -386,8 +413,11 @@ def main():
                 search_payroll()
             elif search_type.lower() in ["total", "t"]:
                 total_net_pay_search()
+            elif search_type.lower() in ["list", "l"]:
+                list_employees(employees)
             else:
-                print("\nInvalid command. Please enter 'specific', 'all', or 'total'.\n")
+                print(
+                    "\nInvalid command. Please enter 'specific', 'all', 'total', or 'list'.\n")
 
         elif action.lower() in ["edit", "e"]:
             edit_employee(employees)
