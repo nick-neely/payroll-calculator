@@ -6,33 +6,41 @@ This is a simple payroll calculator written in Python. It allows you to manage e
 
 - **Add Employee**: You can add a new employee to the system. You'll need to provide the employee's name, email, and hourly wage. Each employee is assigned a unique ID.
 
+- **Edit Employee**: You can edit an existing employee's details. You'll need to provide the employee's ID and the new details you want to update.
+
+- **Delete Employee**: You can delete an existing employee from the system. You'll need to provide the employee's ID. A confirmation is required to prevent accidental deletions.
+
 - **Calculate Payroll**: You can calculate the payroll for an employee. You'll need to enter the employee's ID and the number of hours they've worked. The program will calculate the regular pay, overtime pay (if any), gross pay, FICA tax, and net pay.
 
-- **Search**: You can search for an employee using their ID. You can also search for all instances of a name, or the total net pay.
+- **Search**: You can search for an employee using their ID. You can also search for all instances of a name, the total net pay, or list all employees.
 
 ## Usage
 
-Run the program and follow the prompts. You can choose to add an employee, calculate payroll, or search for an employee. You can also exit the program.
+Run the program and follow the prompts. You can choose to add an employee, edit an employee, delete an employee, calculate payroll, or search for an employee. You can also exit the program.
 
 When adding an employee, you'll be asked for the employee's name, email, and hourly wage. The employee will be assigned a unique ID.
 
+When editing an employee, you'll be asked for the employee's ID and the new details you want to update.
+
+When deleting an employee, you'll be asked for the employee's ID. A confirmation is required to prevent accidental deletions.
+
 When calculating payroll, you'll be asked for the employee's ID and the number of hours they've worked. The program will calculate the regular pay, overtime pay (if any), gross pay, FICA tax, and net pay.
 
-When searching, you can choose to search for a specific employee using their ID, all instances of a name, or the total net pay.
+When searching, you can choose to search for a specific employee using their ID, all instances of a name, the total net pay, or list all employees.
 
 ## Shortcuts
 
 You can use the following shortcuts for the commands:
 
 - Add: A
+- Edit: E
+- Delete: D
 - Calculate: C
 - Search: S
-- Exit: E
+- Exit: X
 
 ## Future Improvements
 
-- Add a feature to edit an employee's information.
-- Add a feature to remove an employee from the system.
 - Improve the search functionality to allow searching by name or email.
 
 ## How to Run
