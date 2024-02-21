@@ -301,6 +301,26 @@ def edit_employee(employees):
         print("\nEmployee not found.\n")
 
 
+def delete_employee(employees):
+    employee_id = input("\nEnter the employee ID to delete: ")
+    if employee_id in employees:
+        print("Employee Details:")
+        print("Name: ", employees[employee_id]["name"])
+        print("Email: ", employees[employee_id]["email"])
+        print("Hourly wage: ", employees[employee_id]["hourly_wage"])
+
+        confirm = input(
+            "\nAre you sure you want to delete this employee? (Y/N): ")
+        if confirm.lower() in ["yes", "y"]:
+            del employees[employee_id]
+            save_employees(employees)  # Save employees to the JSON file
+            print("\nEmployee deleted.\n")
+        else:
+            print("\nEmployee not deleted.\n")
+    else:
+        print("\nEmployee not found.\n")
+
+
 def main():
     """
     The main function.
@@ -311,7 +331,7 @@ def main():
 
     while not exit_program:
         action = input(
-            "Would you like to (A)dd an employee, (C)alculate payroll, (S)earch for an employee, (E)dit an employee, or e(X)it? (A/C/S/E/X): "
+            "Would you like to (A)dd an employee, (C)alculate payroll, (S)earch for an employee, (E)dit an employee, (D)elete an employee, or e(X)it? (A/C/S/E/D/X): "
         )
 
         if action.lower() in ["add", "a"]:
@@ -372,12 +392,15 @@ def main():
         elif action.lower() in ["edit", "e"]:
             edit_employee(employees)
 
+        elif action.lower() in ["delete", "d"]:
+            delete_employee(employees)
+
         elif action.lower() in ["exit", "x"]:
             exit_program = True
 
         else:
             print(
-                "\nInvalid command. Please enter 'add', 'calculate', 'search', 'edit', or 'exit'.\n"
+                "\nInvalid command. Please enter 'add', 'calculate', 'search', 'edit', 'delete', or 'exit'.\n"
             )
 
 
