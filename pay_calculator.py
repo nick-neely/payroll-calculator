@@ -306,12 +306,12 @@ def edit_employee(employees):
     """
     employee_id = input("Enter the employee ID to edit: ")
     if employee_id in employees:
-        print("Current Employee Details:")
+        print("\nCurrent Employee Details:")
         print("Name: ", employees[employee_id]["name"])
         print("Email: ", employees[employee_id]["email"])
         print("Hourly wage: ", employees[employee_id]["hourly_wage"])
 
-        print("\nEnter new details (leave blank to keep current value):")
+        print("\nEnter new details (leave blank to keep current value)")
         name = input("Enter the employee's new name: ")
         email = input("Enter the employee's new email: ")
         hourly_wage = input("Enter the employee's new hourly wage: ")
@@ -368,12 +368,14 @@ def list_employees(employees):
     Returns:
     None
     """
+    print("\n------------------------")
     for employee_id, employee_info in employees.items():
         print(f"ID: {employee_id}")
         print(f"Name: {employee_info['name']}")
         print(f"Email: {employee_info['email']}")
         print(f"Hourly wage: {employee_info['hourly_wage']}")
         print("------------------------")
+    print()
 
 
 def main():
