@@ -266,6 +266,34 @@ def search_employee(employees):
         print("\nEmployee not found.\n")
 
 
+def add_employee(employees):
+    """
+    Adds a new employee to the employee dictionary.
+
+    Parameters:
+    employees (dict): A dictionary containing employee information.
+
+    Returns:
+    None
+    """
+    employee_id = input("\nEnter the employee ID: ")
+    if employee_id in employees:
+        print("\nAn employee with that ID already exists.\n")
+    else:
+        name = input("Enter the employee's name: ")
+        email = input("Enter the employee's email: ")
+        hourly_wage = float(input("Enter the employee's hourly wage: "))
+
+        employees[employee_id] = {
+            "name": name,
+            "email": email,
+            "hourly_wage": hourly_wage,
+        }
+
+        save_employees(employees)  # Save employees to the JSON file
+        print("\nEmployee added.\n")
+
+
 def edit_employee(employees):
     """
     Edit the details of an employee.
@@ -362,16 +390,7 @@ def main():
         )
 
         if action.lower() in ["add", "a"]:
-            employee_id = input("Enter the employee ID: ")
-            name = input("Enter the employee's name: ")
-            email = input("Enter the employee's email: ")
-            hourly_wage = float(input("Enter the employee's hourly wage: "))
-            employees[employee_id] = {
-                "name": name,
-                "email": email,
-                "hourly_wage": hourly_wage,
-            }
-            save_employees(employees)  # Save employees to the JSON file
+            add_employee(employees)
 
         elif action.lower() in ["calculate", "c"]:
             employee_id = input(
