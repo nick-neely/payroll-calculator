@@ -1,2 +1,6 @@
 payroll_summary.json
 employees.json
+/.vscode
+/env
+time_card.tex
+time_card.pdf

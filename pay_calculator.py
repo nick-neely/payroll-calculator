@@ -1,30 +1,86 @@
 import json
 import datetime
 from collections import OrderedDict
+from pylatex import Document, Section, Subsection, Tabular, MultiColumn, LongTable, Command
+from pylatex.utils import bold
 
-file_path = r"payroll_summary.json"
+
+def load_settings():
+    with open("settings.json", "r") as f:
+        return json.load(f)
 
 
-def save_employees(employees):
+settings = load_settings()
+
+file_path = settings["payroll_summary_path"]
+employees_path = settings["employees_path"]
+
+
+def save_employees(employees, employees_path):
     """
     Save the list of employees to a JSON file.
 
     Args:
         employees (list): A list of employee objects.
+        employees_path (str): The path to the JSON file.
 
     Returns:
         None
     """
-    with open("employees.json", "w") as f:
+    with open(employees_path, "w") as f:
         json.dump(employees, f)
 
 
-def load_employees():
+def load_employees(employees_path):
+    """
+    Load the list of employees from a JSON file.
+
+    Args:
+        employees_path (str): The path to the JSON file.
+
+    Returns:
+        dict: A dictionary of employees, or an empty dictionary if the file does not exist.
+    """
     try:
-        with open("employees.json", "r") as f:
+        with open(employees_path, "r") as f:
             return json.load(f)
     except FileNotFoundError:
+        print("The file was not found, initializing an empty list of employees.")
         return {}
+    except json.JSONDecodeError:
+        print("JSON decoding failed, initializing an empty list of employees.")
+        return {}
+    except PermissionError:
+        print("Permission denied while trying to read the file.")
+        return {}
+
+
+def calculate_overtime(total_hours_worked, hours_worked, hourly_wage):
+    """
+    Calculates the overtime hours and pay.
+
+    Args:
+        total_hours_worked (float): The total hours worked so far.
+        hours_worked (float): The hours worked in the current period.
+        hourly_wage (float): The hourly wage.
+
+    Returns:
+        tuple: A tuple containing the new total hours worked, the overtime hours, and the overtime pay.
+    """
+    if total_hours_worked + hours_worked > 40:
+        overtime_hours = (total_hours_worked + hours_worked) - 40
+    else:
+        overtime_hours = 0
+
+    total_hours_worked += hours_worked
+
+    # Calculate the overtime wage
+    overtime_wage = hourly_wage * 1.5
+
+    # Calculate the overtime pay
+    overtime_pay = overtime_hours * overtime_wage
+
+    return total_hours_worked, overtime_hours, overtime_pay
 
 
 def calculate_payroll(hourly_wage):
@@ -49,32 +105,20 @@ def calculate_payroll(hourly_wage):
                     break
                 try:
                     hours_worked = float(hours_worked)
-
-                    if total_hours_worked + hours_worked > 40:
-                        overtime_hours = (
-                            total_hours_worked + hours_worked) - 40
-                    else:
-                        overtime_hours = 0
-
-                    total_hours_worked += hours_worked
-
-                    # Calculate the overtime wage
-                    overtime_wage = hourly_wage * 1.5
-
-                    # Calculate the overtime pay
-                    overtime_pay = overtime_hours * overtime_wage
+                    total_hours_worked, overtime_hours, overtime_pay = calculate_overtime(
+                        total_hours_worked, hours_worked, hourly_wage)
 
                     # Calculate the FICA tax
                     fica_tax_rate = 7.65 / 100
 
                     # Calculate the gross pay, FICA tax, and net pay
-                    gross_pay = (total_hours_worked * hourly_wage) + (
-                        overtime_hours * hourly_wage * 1.5
-                    )
-                    fica_tax = gross_pay * fica_tax_rate
-                    net_pay = gross_pay - fica_tax
+                    if total_hours_worked > 40:
+                        regular_hours = 40
+                    else:
+                        regular_hours = total_hours_worked
 
-                    # Calculate the net pay
+                    gross_pay = (regular_hours * hourly_wage) + overtime_pay
+                    fica_tax = gross_pay * fica_tax_rate
                     net_pay = gross_pay - fica_tax
 
                 except ValueError:
@@ -92,7 +136,7 @@ def calculate_payroll(hourly_wage):
         if overtime_hours > 0:
             print(f"Overtime Hours: {overtime_hours:.2f}")
             print(
-                f"Overtime Pay ({overtime_hours} * ${overtime_wage:.2f}): ${overtime_pay:.2f}"
+                f"Overtime Pay ({overtime_hours} * ${hourly_wage * 1.5:.2f}): ${overtime_pay:.2f}"
             )
 
         # Print the gross pay, FICA tax, and net pay
@@ -121,6 +165,45 @@ def calculate_payroll(hourly_wage):
         fica_tax,
         net_pay,
     )
+
+
+def generate_time_card(employee, total_hours_worked, wage_details):
+    """
+    Generates a time card document for an employee.
+
+    Args:
+        employee (dict): Dictionary containing employee details.
+        total_hours_worked (float): Total hours worked by the employee.
+        wage_details (dict): Dictionary containing wage details.
+
+    Returns:
+        None
+    """
+    doc = Document("time_card")
+
+    doc.preamble.append(Command('title', 'Time Card'))
+    doc.preamble.append(Command('author', employee['name']))
+    doc.preamble.append(Command('date', ''))
+    doc.append(Command('maketitle'))
+
+    with doc.create(Section('Employee Details')):
+        employee_details = Tabular('l l')
+        employee_details.add_row(("Name:", employee['name']))
+        employee_details.add_row(
+            ("Hourly Wage:", f"${employee['hourly_wage']:.2f}"))
+        doc.append(employee_details)
+
+    with doc.create(Section('Worked Hours')):
+        doc.append(f"Total Hours Worked: {total_hours_worked}")
+
+    with doc.create(Section('Wage Details')):
+        table = Tabular('l r')
+        table.add_row(("Gross Pay", f"${wage_details['gross_pay']:.2f}"))
+        table.add_row(("FICA Tax", f"${wage_details['fica_tax']:.2f}"))
+        table.add_row(("Net Pay", f"${wage_details['net_pay']:.2f}"))
+        doc.append(table)
+
+    doc.generate_pdf(clean_tex=False)
 
 
 def save_payroll(
@@ -152,32 +235,51 @@ def save_payroll(
         )
 
         if overtime_hours > 0:
-            # Add "Overtime Hours" and "Overtime Pay" to the end of the dictionary
+            # Add Overtime Hours and Overtime Pay to the end of the dictionary
             payroll_summary["Overtime Hours"] = overtime_hours
             payroll_summary["Overtime Pay"] = round(overtime_pay, 2)
 
-            # Move "Gross Pay", "FICA Tax", and "Net Pay" to the end of the dictionary
+            # Move Gross Pay, FICA Tax, and Net Pay to the end of the dictionary
             for key in ["Gross Pay", "FICA Tax", "Net Pay"]:
                 payroll_summary.move_to_end(key)
+
+        # Generate time card
+        employee = {"name": name,
+                    "hourly_wage": gross_pay / total_hours_worked}
+        wage_details = {
+            "gross_pay": gross_pay,
+            "fica_tax": fica_tax,
+            "net_pay": net_pay,
+        }
+        generate_time_card(employee, total_hours_worked, wage_details)
 
         # Read the existing data from the file
         try:
             with open(file_path, "r") as file:
                 data = json.load(file)
-        except (FileNotFoundError, json.JSONDecodeError):
+        except FileNotFoundError:
+            print("\nError: Payroll summary file not found.\n")
+            data = []
+        except json.JSONDecodeError:
+            print("\nError: Invalid JSON format in payroll summary file.\n")
             data = []
 
         # Append the new payroll summary
         data.append(payroll_summary)
 
         # Write the data back to the file
-        with open(file_path, "w") as file:
-            json.dump(data, file, indent=4)
+        try:
+            with open(file_path, "w") as file:
+                json.dump(data, file, indent=4)
+        except PermissionError:
+            print(
+                "\nError: Permission denied when trying to write to the payroll summary file.\n")
+            return
 
         print("\nPayroll summary saved to payroll_summary.json\n")
 
-    except IOError:
-        print("\nError saving payroll summary to file.\n")
+    except Exception as e:
+        print(f"\nUnexpected error occurred: {str(e)}\n")
 
 
 def search_payroll():
@@ -192,7 +294,11 @@ def search_payroll():
         try:
             with open(file_path, "r") as file:
                 data = json.load(file)
-        except (FileNotFoundError, json.JSONDecodeError):
+        except FileNotFoundError:
+            print("\nError: Payroll summary file not found.\n")
+            data = []
+        except json.JSONDecodeError:
+            print("\nError: Invalid JSON format in payroll summary file.\n")
             data = []
 
         # Ask the user for the name to search
@@ -220,8 +326,8 @@ def search_payroll():
         if not found:
             print("\nNo payroll summary found for the specified name.\n")
 
-    except IOError:
-        print("\nError reading payroll summary from file.\n")
+    except Exception as e:
+        print(f"\nUnexpected error occurred: {str(e)}\n")
 
 
 def total_net_pay_search():
@@ -236,7 +342,11 @@ def total_net_pay_search():
         try:
             with open(file_path, "r") as file:
                 data = json.load(file)
-        except (FileNotFoundError, json.JSONDecodeError):
+        except FileNotFoundError:
+            print("\nError: Payroll summary file not found.\n")
+            data = []
+        except json.JSONDecodeError:
+            print("\nError: Invalid JSON format in payroll summary file.\n")
             data = []
 
         # Ask the user for the name to search
@@ -250,8 +360,8 @@ def total_net_pay_search():
 
         print(f"\nTotal Net Pay: ${total_net_pay:.2f}\n")
 
-    except IOError:
-        print("\nError reading payroll summary from file.\n")
+    except Exception as e:
+        print(f"\nUnexpected error occurred: {str(e)}\n")
 
 
 def search_employee(employees):
@@ -290,7 +400,8 @@ def add_employee(employees):
             "hourly_wage": hourly_wage,
         }
 
-        save_employees(employees)  # Save employees to the JSON file
+        # Save employees to the JSON file
+        save_employees(employees, employees_path)
         print("\nEmployee added.\n")
 
 
@@ -323,7 +434,8 @@ def edit_employee(employees):
         if hourly_wage:
             employees[employee_id]["hourly_wage"] = float(hourly_wage)
 
-        save_employees(employees)  # Save employees to the JSON file
+        # Save employees to the JSON file
+        save_employees(employees, employees_path)
         print("\nEmployee details updated.\n")
     else:
         print("\nEmployee not found.\n")
@@ -350,7 +462,8 @@ def delete_employee(employees):
             "\nAre you sure you want to delete this employee? (Y/N): ")
         if confirm.lower() in ["yes", "y"]:
             del employees[employee_id]
-            save_employees(employees)  # Save employees to the JSON file
+            # Save employees to the JSON file
+            save_employees(employees, employees_path)
             print("\nEmployee deleted.\n")
         else:
             print("\nEmployee not deleted.\n")
@@ -382,7 +495,8 @@ def main():
     """
     The main function.
     """
-    employees = load_employees()  # Load employees from the JSON file
+    employees = load_employees(
+        employees_path)  # Load employees from the JSON file
 
     exit_program = False
 
