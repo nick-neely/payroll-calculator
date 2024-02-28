@@ -3,6 +3,48 @@ import datetime
 from collections import OrderedDict
 from pylatex import Document, Section, Subsection, Tabular, MultiColumn, LongTable, Command
 from pylatex.utils import bold
+import click
+
+
+@click.group(invoke_without_command=True)
+@click.pass_context
+def cli(ctx):
+    if ctx.invoked_subcommand is None:
+        ctx.invoke(show_menu)
+
+
+@cli.command()
+@click.pass_context
+def show_menu(ctx):
+    while True:
+        click.echo('1. Add Employee')
+        click.echo('2. Calculate Payroll')
+        click.echo('3. Delete Employee')
+        click.echo('4. Edit Employee')
+        click.echo('5. Search')
+        click.echo('6. Exit')
+
+        choice = click.prompt('Please enter a choice', type=int)
+
+        if choice == 1:
+            ctx.forward(add_employee)
+        elif choice == 2:
+            ctx.forward(calculate_payroll)
+        elif choice == 3:
+            ctx.forward(delete_employee)
+        elif choice == 4:
+            ctx.forward(edit_employee)
+        elif choice == 5:
+            ctx.forward(search)
+        elif choice == 6:
+            break
+        else:
+            click.echo('Invalid choice')
+
+
+@click.group()
+def search():
+    pass
 
 
 def load_settings():
@@ -83,7 +125,9 @@ def calculate_overtime(total_hours_worked, hours_worked, hourly_wage):
     return total_hours_worked, overtime_hours, overtime_pay
 
 
-def calculate_payroll(hourly_wage):
+@cli.command()
+@click.option('--employee_id', prompt='Employee ID', type=str, help='The ID of the employee.')
+def calculate_payroll(employee_id):
     """
     Calculates the payroll summary based on the number of hours worked and hourly wage.
 
@@ -91,6 +135,16 @@ def calculate_payroll(hourly_wage):
         A tuple containing the total hours worked, gross pay, FICA tax, and net pay.
     """
     try:
+        employees = load_employees(
+            employees_path)  # Load employees from the JSON file
+
+        # Check if the employee ID exists
+        if employee_id not in employees:
+            click.echo("Invalid employee ID.")
+            return
+
+        hourly_wage = employees[employee_id]["hourly_wage"]
+
         # Initialize the hours worked
         total_hours_worked = 0.0
         overtime_hours = 0.0
@@ -98,9 +152,8 @@ def calculate_payroll(hourly_wage):
         while True:
             # Ask the user for the number of hours worked
             while True:
-                hours_worked = input(
-                    "Please enter the number of hours worked (or 'done' to finish): "
-                )
+                hours_worked = click.prompt(
+                    "Please enter the number of hours worked (or 'done' to finish)", type=str)
                 if hours_worked.lower() == "done":
                     break
                 try:
@@ -122,40 +175,42 @@ def calculate_payroll(hourly_wage):
                     net_pay = gross_pay - fica_tax
 
                 except ValueError:
-                    print("Invalid input. Please enter a valid number of hours.")
+                    click.echo(
+                        "Invalid input. Please enter a valid number of hours.")
 
             if hours_worked.lower() == "done":
                 break
 
         # Print the total hours worked
-        print("\nPayroll Summary")
-        print("-------------------------")
-        print(f"Total Hours Worked: {total_hours_worked:.2f}")
+        click.echo("\nPayroll Summary")
+        click.echo("-------------------------")
+        click.echo(f"Total Hours Worked: {total_hours_worked:.2f}")
 
         # Print the overtime hours if any
         if overtime_hours > 0:
-            print(f"Overtime Hours: {overtime_hours:.2f}")
-            print(
+            click.echo(f"Overtime Hours: {overtime_hours:.2f}")
+            click.echo(
                 f"Overtime Pay ({overtime_hours} * ${hourly_wage * 1.5:.2f}): ${overtime_pay:.2f}"
             )
 
         # Print the gross pay, FICA tax, and net pay
         if overtime_hours > 0:
-            print(
+            click.echo(
                 f"Gross Pay ({total_hours_worked - overtime_hours} * ${hourly_wage:.2f} + ${overtime_pay:.2f}): ${gross_pay:.2f}"
             )
         else:
-            print(
+            click.echo(
                 f"Gross Pay ({total_hours_worked - overtime_hours} * ${hourly_wage:.2f}): ${gross_pay:.2f}"
             )
-        print(
+        click.echo(
             f"FICA Tax (${gross_pay:.2f} * {fica_tax_rate}): ${fica_tax:.2f}")
-        print(f"Net Pay (${gross_pay:.2f} - ${fica_tax:.2f}): ${net_pay:.2f}")
+        click.echo(
+            f"Net Pay (${gross_pay:.2f} - ${fica_tax:.2f}): ${net_pay:.2f}")
 
-        print("-------------------------")
+        click.echo("-------------------------")
 
     except ValueError:
-        print("\nInvalid input. Please enter a valid number of hours.\n")
+        click.echo("\nInvalid input. Please enter a valid number of hours.\n")
 
     return (
         total_hours_worked,
@@ -282,7 +337,10 @@ def save_payroll(
         print(f"\nUnexpected error occurred: {str(e)}\n")
 
 
-def search_payroll():
+@search.command()
+@click.option('--file_path', prompt='File path', type=str, help='The path to the payroll summary file.')
+@click.option('--name', prompt='Name', type=str, help='The name to search in the payroll summary.')
+def search_payroll(file_path, name):
     """
     Search the payroll summary for a specific name.
 
@@ -295,41 +353,46 @@ def search_payroll():
             with open(file_path, "r") as file:
                 data = json.load(file)
         except FileNotFoundError:
-            print("\nError: Payroll summary file not found.\n")
+            click.echo("\nError: Payroll summary file not found.\n")
             data = []
         except json.JSONDecodeError:
-            print("\nError: Invalid JSON format in payroll summary file.\n")
+            click.echo(
+                "\nError: Invalid JSON format in payroll summary file.\n")
             data = []
 
-        # Ask the user for the name to search
-        name = input("Please enter the name to search: ").lower()
+        # Convert the name to lowercase for case insensitive search
+        name = name.lower()
 
         # Search the payroll summary for the name
         found = False
         for payroll_summary in data:
             if payroll_summary["Name"].lower() == name:
-                print("-------------------------")
-                print(f"Name: {payroll_summary['Name']}")
-                print(f"Date: {payroll_summary['Date']}")
-                print(f"Total Hours: {payroll_summary['Total Hours']} hrs")
+                click.echo("-------------------------")
+                click.echo(f"Name: {payroll_summary['Name']}")
+                click.echo(f"Date: {payroll_summary['Date']}")
+                click.echo(
+                    f"Total Hours: {payroll_summary['Total Hours']} hrs")
                 if "Overtime Hours" in payroll_summary:
-                    print(
+                    click.echo(
                         f"Overtime Hours: {payroll_summary['Overtime Hours']} hrs")
                 if "Overtime Pay" in payroll_summary:
-                    print(f"Overtime Pay: ${payroll_summary['Overtime Pay']}")
-                print(f"Gross Pay: ${payroll_summary['Gross Pay']}")
-                print(f"FICA Tax: ${payroll_summary['FICA Tax']}")
-                print(f"Net Pay: ${payroll_summary['Net Pay']}")
-                print("-------------------------")
+                    click.echo(
+                        f"Overtime Pay: ${payroll_summary['Overtime Pay']}")
+                click.echo(f"Gross Pay: ${payroll_summary['Gross Pay']}")
+                click.echo(f"FICA Tax: ${payroll_summary['FICA Tax']}")
+                click.echo(f"Net Pay: ${payroll_summary['Net Pay']}")
+                click.echo("-------------------------")
                 found = True
 
         if not found:
-            print("\nNo payroll summary found for the specified name.\n")
+            click.echo("\nNo payroll summary found for the specified name.\n")
 
     except Exception as e:
-        print(f"\nUnexpected error occurred: {str(e)}\n")
+        click.echo(f"\nUnexpected error occurred: {str(e)}\n")
 
 
+@search.command()
+@click.option('--name', prompt='Name', type=str, help='The name to search in the payroll summary.')
 def total_net_pay_search():
     """
     Searches the payroll summary for a given name and calculates the total net pay.
@@ -343,14 +406,15 @@ def total_net_pay_search():
             with open(file_path, "r") as file:
                 data = json.load(file)
         except FileNotFoundError:
-            print("\nError: Payroll summary file not found.\n")
+            click.echo("\nError: Payroll summary file not found.\n")
             data = []
         except json.JSONDecodeError:
-            print("\nError: Invalid JSON format in payroll summary file.\n")
+            click.echo(
+                "\nError: Invalid JSON format in payroll summary file.\n")
             data = []
 
-        # Ask the user for the name to search
-        name = input("Please enter the name to search: ").lower()
+        # Convert the name to lowercase for case insensitive search
+        name = name.lower()
 
         # Search the payroll summary for the name
         total_net_pay = 0.0
@@ -358,120 +422,36 @@ def total_net_pay_search():
             if payroll_summary["Name"].lower() == name:
                 total_net_pay += payroll_summary["Net Pay"]
 
-        print(f"\nTotal Net Pay: ${total_net_pay:.2f}\n")
+        click.echo(f"\nTotal Net Pay: ${total_net_pay:.2f}\n")
 
     except Exception as e:
-        print(f"\nUnexpected error occurred: {str(e)}\n")
+        click.echo(f"\nUnexpected error occurred: {str(e)}\n")
 
 
-def search_employee(employees):
-    employee_id = input("Enter the employee ID: ")
-    if employee_id in employees:
-        print("\nEmployee found:")
-        print("Name: ", employees[employee_id]["name"])
-        print("Email: ", employees[employee_id]["email"])
-        print("Hourly wage: ", employees[employee_id]["hourly_wage"])
-        print()  # Add a new line
-    else:
-        print("\nEmployee not found.\n")
+@search.command()
+@click.option('--employee_id', prompt='Employee ID', type=str, help='The ID of the employee.')
+def search_employee(employee_id):
+    try:
+        employees = load_employees(
+            employees_path)  # Load employees from the JSON file
+
+        # Check if the employee ID exists
+        if employee_id not in employees:
+            click.echo("\nEmployee not found.\n")
+            return
+
+        # Print the employee details
+        click.echo("\nEmployee found:")
+        click.echo(f"Name: {employees[employee_id]['name']}")
+        click.echo(f"Email: {employees[employee_id]['email']}")
+        click.echo(f"Hourly wage: {employees[employee_id]['hourly_wage']}\n")
+
+    except Exception as e:
+        click.echo(f"\nUnexpected error occurred: {str(e)}\n")
 
 
-def add_employee(employees):
-    """
-    Adds a new employee to the employee dictionary.
-
-    Parameters:
-    employees (dict): A dictionary containing employee information.
-
-    Returns:
-    None
-    """
-    employee_id = input("\nEnter the employee ID: ")
-    if employee_id in employees:
-        print("\nAn employee with that ID already exists.\n")
-    else:
-        name = input("Enter the employee's name: ")
-        email = input("Enter the employee's email: ")
-        hourly_wage = float(input("Enter the employee's hourly wage: "))
-
-        employees[employee_id] = {
-            "name": name,
-            "email": email,
-            "hourly_wage": hourly_wage,
-        }
-
-        # Save employees to the JSON file
-        save_employees(employees, employees_path)
-        print("\nEmployee added.\n")
-
-
-def edit_employee(employees):
-    """
-    Edit the details of an employee.
-
-    Args:
-        employees (dict): A dictionary containing employee information.
-
-    Returns:
-        None
-    """
-    employee_id = input("Enter the employee ID to edit: ")
-    if employee_id in employees:
-        print("\nCurrent Employee Details:")
-        print("Name: ", employees[employee_id]["name"])
-        print("Email: ", employees[employee_id]["email"])
-        print("Hourly wage: ", employees[employee_id]["hourly_wage"])
-
-        print("\nEnter new details (leave blank to keep current value)")
-        name = input("Enter the employee's new name: ")
-        email = input("Enter the employee's new email: ")
-        hourly_wage = input("Enter the employee's new hourly wage: ")
-
-        if name:
-            employees[employee_id]["name"] = name
-        if email:
-            employees[employee_id]["email"] = email
-        if hourly_wage:
-            employees[employee_id]["hourly_wage"] = float(hourly_wage)
-
-        # Save employees to the JSON file
-        save_employees(employees, employees_path)
-        print("\nEmployee details updated.\n")
-    else:
-        print("\nEmployee not found.\n")
-
-
-def delete_employee(employees):
-    """
-    Deletes an employee from the employees dictionary based on the provided employee ID.
-
-    Args:
-        employees (dict): A dictionary containing employee information.
-
-    Returns:
-        None
-    """
-    employee_id = input("\nEnter the employee ID to delete: ")
-    if employee_id in employees:
-        print("Employee Details:")
-        print("Name: ", employees[employee_id]["name"])
-        print("Email: ", employees[employee_id]["email"])
-        print("Hourly wage: ", employees[employee_id]["hourly_wage"])
-
-        confirm = input(
-            "\nAre you sure you want to delete this employee? (Y/N): ")
-        if confirm.lower() in ["yes", "y"]:
-            del employees[employee_id]
-            # Save employees to the JSON file
-            save_employees(employees, employees_path)
-            print("\nEmployee deleted.\n")
-        else:
-            print("\nEmployee not deleted.\n")
-    else:
-        print("\nEmployee not found.\n")
-
-
-def list_employees(employees):
+@search.command()
+def list_employees():
     """
     Prints the details of each employee in the provided dictionary.
 
@@ -481,14 +461,133 @@ def list_employees(employees):
     Returns:
     None
     """
-    print("\n------------------------")
-    for employee_id, employee_info in employees.items():
-        print(f"ID: {employee_id}")
-        print(f"Name: {employee_info['name']}")
-        print(f"Email: {employee_info['email']}")
-        print(f"Hourly wage: {employee_info['hourly_wage']}")
-        print("------------------------")
-    print()
+    try:
+        # Load employees from the JSON file
+        employees = load_employees(employees_path)
+
+        click.echo("\n------------------------")
+        for employee_id, employee_info in employees.items():
+            click.echo(f"ID: {employee_id}")
+            click.echo(f"Name: {employee_info['name']}")
+            click.echo(f"Email: {employee_info['email']}")
+            click.echo(f"Hourly wage: {employee_info['hourly_wage']}")
+            click.echo("------------------------")
+        click.echo()
+
+    except Exception as e:
+        click.echo(f"\nUnexpected error occurred: {str(e)}\n")
+
+
+@cli.command()
+@click.option('--id', prompt='Employee ID', help="The employee's ID")
+@click.option('--name', prompt='Employee name', help="The employee's name")
+@click.option('--email', prompt='Employee email', help="The employee's email")
+@click.option('--wage', prompt='Employee wage', type=float, help="The employee's hourly wage")
+def add_employee(id, name, email, wage):
+    """
+    Adds a new employee to the employee dictionary.
+
+    Parameters:
+    id (str): The employee's ID.
+    name (str): The employee's name.
+    email (str): The employee's email.
+    wage (float): The employee's hourly wage.
+
+    Returns:
+    None
+    """
+    employees = load_employees(
+        employees_path)  # Load employees from the JSON file
+    if id in employees:
+        click.echo("An employee with that ID already exists.")
+    else:
+        employees[id] = {
+            "name": name,
+            "email": email,
+            "hourly_wage": wage
+        }
+        save_employees(employees, employees_path)
+        click.echo(f'Adding employee: {name} with ID: {id}')
+
+
+@cli.command()
+@click.option('--id', prompt='Employee ID', help="The employee's ID")
+def edit_employee(employee_id):
+    """
+    Edit the details of an employee.
+
+    Args:
+        employees (dict): A dictionary containing employee information.
+
+    Returns:
+        None
+    """
+    try:
+        # Load employees from the JSON file
+        employees = load_employees(employees_path)
+        if employee_id in employees:
+            click.echo("\nCurrent Employee Details:")
+            click.echo(f"Name: {employees[employee_id]['name']}")
+            click.echo(f"Email: {employees[employee_id]['email']}")
+            click.echo(f"Hourly wage: {employees[employee_id]['hourly_wage']}")
+
+            click.echo(
+                "\nEnter new details (leave blank to keep current value)")
+            name = click.prompt("Enter the employee's new name",
+                                default=employees[employee_id]['name'], show_default=False)
+            email = click.prompt("Enter the employee's new email",
+                                 default=employees[employee_id]['email'], show_default=False)
+            hourly_wage = click.prompt("Enter the employee's new hourly wage",
+                                       default=employees[employee_id]['hourly_wage'], show_default=False)
+
+            employees[employee_id]["name"] = name
+            employees[employee_id]["email"] = email
+            employees[employee_id]["hourly_wage"] = float(hourly_wage)
+
+            # Save employees to the JSON file
+            save_employees(employees, employees_path)
+            click.echo("\nEmployee details updated.\n")
+        else:
+            click.echo("\nEmployee not found.\n")
+
+    except Exception as e:
+        click.echo(f"\nUnexpected error occurred: {str(e)}\n")
+
+
+@cli.command()
+@click.option('--id', prompt='Employee ID', help="The employee's ID")
+def delete_employee(employee_id):
+    """
+    Deletes an employee from the employees dictionary based on the provided employee ID.
+
+    Args:
+        employees (dict): A dictionary containing employee information.
+
+    Returns:
+        None
+    """
+    try:
+        # Load employees from the JSON file
+        employees = load_employees(employees_path)
+        if employee_id in employees:
+            click.echo("Employee Details:")
+            click.echo(f"Name: {employees[employee_id]['name']}")
+            click.echo(f"Email: {employees[employee_id]['email']}")
+            click.echo(f"Hourly wage: {employees[employee_id]['hourly_wage']}")
+
+            confirm = click.prompt(
+                "\nAre you sure you want to delete this employee? (Y/N)", type=str)
+            if confirm.lower() in ["yes", "y"]:
+                del employees[employee_id]
+                # Save employees to the JSON file
+                save_employees(employees, employees_path)
+                click.echo("\nEmployee deleted.\n")
+            else:
+                click.echo("\nEmployee not deleted.\n")
+        else:
+            click.echo("\nEmployee not found.\n")
+    except Exception as e:
+        click.echo(f"\nUnexpected error occurred: {str(e)}\n")
 
 
 def main():
@@ -569,4 +668,7 @@ def main():
             )
 
 
-main()
+cli.add_command(search)
+
+if __name__ == '__main__':
+    cli()
