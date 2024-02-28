@@ -52,14 +52,20 @@ You can use the following shortcuts for the commands:
    - On Windows, run: `env\Scripts\activate`
    - On Unix or MacOS, run: `source env/bin/activate`
 5. Install the required packages using the command: `pip install -r requirements.txt`
-6. Create a `settings.json` file in the same directory as `pay_calculator.py`. This file should contain the paths to your payroll summary and employees files. For example:
+6. Install a LaTeX compiler on your system. This is required to generate the PDF time cards. We recommend using [TeX Live](https://www.tug.org/texlive/).
+7. Create a `settings.json` file in the same directory as `pay_calculator.py`. This file should contain the paths to your payroll summary, employees files, and the directory for time cards. For example:
 
 ```json
 {
   "payroll_summary_path": "payroll_summary.json",
-  "employees_path": "employees.json"
+  "employees_path": "employees.json",
+  "time_cards_directory": "./time-cards"
 }
 ```
+
+The `payroll_summary_path`, `employees_path`, and `timecards_directory` are relative to the current project directory. For example, if `payroll_summary_path` is set to `"payroll_summary.json"`, the `pay_calculator.py` script will look for this file in the same directory where the script is located.
+
+For the `timecards_directory`, you should include `./` at the start of the path to make it relative to the current project directory. For example, if `timecards_directory` is set to `"./timecards"`, the time cards will be saved in a timecards directory inside the current project directory.
 
 ## How to Run
 
@@ -74,6 +80,7 @@ You can use the following shortcuts for the commands:
 ## Requirements
 
 - Python 3.x
+- LaTeX compiler (e.g., [TeX Live](https://www.tug.org/texlive/))
 
 ## Contribution
 

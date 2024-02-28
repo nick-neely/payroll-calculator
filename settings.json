@@ -1,4 +1,5 @@
 {
   "payroll_summary_path": "payroll_summary.json",
-  "employees_path": "employees.json"
+  "employees_path": "employees.json",
+  "time_cards_directory": "./time-cards"
 }

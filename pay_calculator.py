@@ -1,7 +1,8 @@
 import json
-import datetime
+import os
+from datetime import datetime
 from collections import OrderedDict
-from pylatex import Document, Section, Subsection, Tabular, MultiColumn, LongTable, Command
+from pylatex import Document, Section, Tabular, Command
 from pylatex.utils import bold
 
 
@@ -14,6 +15,7 @@ settings = load_settings()
 
 file_path = settings["payroll_summary_path"]
 employees_path = settings["employees_path"]
+time_cards_directory = settings["time_cards_directory"]
 
 
 def save_employees(employees, employees_path):
@@ -179,7 +181,15 @@ def generate_time_card(employee, total_hours_worked, wage_details):
     Returns:
         None
     """
-    doc = Document("time_card")
+    # Get the current datetime and format it as a string
+    now = datetime.now().strftime("%Y%m%d%H%M%S")
+
+    # Ensure that the directory exists
+    os.makedirs(time_cards_directory, exist_ok=True)
+
+    # Include the employee's name and the current datetime in the filename
+    filename = f"{time_cards_directory}/time_card_{employee['name']}_{now}"
+    doc = Document(filename)
 
     doc.preamble.append(Command('title', 'Time Card'))
     doc.preamble.append(Command('author', employee['name']))
@@ -205,6 +215,9 @@ def generate_time_card(employee, total_hours_worked, wage_details):
 
     doc.generate_pdf(clean_tex=False)
 
+    # Delete the .tex file
+    os.remove(f"{filename}.tex")
+
 
 def save_payroll(
     name, total_hours_worked, overtime_hours, overtime_pay, gross_pay, fica_tax, net_pay
@@ -226,7 +239,7 @@ def save_payroll(
         payroll_summary = OrderedDict(
             [
                 ("Name", name),
-                ("Date", datetime.datetime.now().strftime("%Y-%m-%d")),
+                ("Date", datetime.now().strftime("%Y-%m-%d")),
                 ("Total Hours", total_hours_worked),
                 ("Gross Pay", round(gross_pay, 2)),
                 ("FICA Tax", round(fica_tax, 2)),
