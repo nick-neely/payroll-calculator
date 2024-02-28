@@ -18,7 +18,7 @@ This is a simple payroll calculator written in Python. It allows you to manage e
 
 Run the program and follow the prompts. You can choose to add an employee, edit an employee, delete an employee, calculate payroll, or search for an employee. You can also exit the program.
 
-When adding an employee, you'll be asked for the employee's name, email, and hourly wage. The employee will be assigned a unique ID.
+When adding an employee, you'll be asked for the employee's ID, name, email, and hourly wage.
 
 When editing an employee, you'll be asked for the employee's ID and the new details you want to update.
 
